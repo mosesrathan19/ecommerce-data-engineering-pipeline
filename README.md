@@ -9,13 +9,13 @@ A portfolio-ready, reproducible **100K-order** batch ETL project designed to run
 `CSV sources (Bronze) → Python/Pandas validation and enrichment (Silver) → SQLite + monthly/category/state aggregates (Gold) → SQL & visualization`
 
 ## Dataset
-- `data/raw/orders.csv`: **100,100 rows**, including 100 duplicate order IDs; 100,000 distinct orders
+- `data/raw/orders_part_01.csv` through `orders_part_20.csv`: **100,100 rows** across 20 CSV shards, including 100 duplicate order IDs; 100,000 distinct orders
 - `data/raw/customers.csv`: 5,000 synthetic customers
 - `data/raw/products.csv`: 200 synthetic products
-- Deliberate invalid rows: 250 missing prices, 150 negative quantities, 125 unknown customer IDs, 100 malformed dates
+- Deliberate invalid rows: 625 orders referencing an unknown customer ID
 
 ## Key Data Engineering Techniques
-- Deterministic synthetic sample datasets (`random.seed(42)`)
+- Deterministic synthetic sample datasets (pre-generated, committed CSV shards)
 - Source extraction, schema conversion, duplicate removal
 - Referential integrity checks between fact and dimension tables
 - Quarantine of invalid rows; audited record counts
@@ -25,10 +25,9 @@ A portfolio-ready, reproducible **100K-order** batch ETL project designed to run
 - SQL analytics in SQLite, matplotlib reporting, unit tests
 
 ## Quick start in Colab
-1. Upload the project ZIP or copy project files to your Google Drive; extract it.
-2. Open `notebooks/01_ecommerce_etl_colab.ipynb` in [Google Colab](https://colab.research.google.com/).
-3. If importing from GitHub, replace the `REPO_URL` value in the first cell with your repository URL, or upload the ZIP.
-4. Run cells top to bottom. The notebook installs dependencies, imports the pipeline, runs it, shows quality metrics, SQL results, and charts.
+1. Open [the notebook in Colab](https://colab.research.google.com/github/mosesrathan19/ecommerce-data-engineering-pipeline/blob/main/notebooks/01_ecommerce_etl_colab.ipynb).
+2. Run the cells in order. The first code cell clones this public repository automatically.
+3. The notebook installs dependencies, imports the pipeline, runs ETL, shows quality metrics, SQL results, and charts.
 
 ## Run locally
 ```bash
