@@ -6,6 +6,10 @@
 A portfolio-ready, reproducible **100K-order** batch ETL project designed to run in **Google Colab** or locally. All data is **synthetic** — there is no real customer information.
 
 ## Architecture
+
+**Phase 1 (original):** `Raw CSV → Pandas Silver → SQLite Gold`  
+**Phase 2 (new):** `Raw CSV (Bronze) → PySpark validate/enrich → Silver Parquet + quarantine Parquet → Gold Parquet → Spark SQL`
+
 `CSV sources (Bronze) → Python/Pandas validation and enrichment (Silver) → SQLite + monthly/category/state aggregates (Gold) → SQL & visualization`
 
 ## Dataset
@@ -23,6 +27,24 @@ A portfolio-ready, reproducible **100K-order** batch ETL project designed to run
 - Repeatable batch pipeline, idempotent **full-refresh** loads (replace mode)
 - Silver fact table and Gold monthly, category, and state aggregates
 - SQL analytics in SQLite, matplotlib reporting, unit tests
+
+## Phase 2 — PySpark + Parquet (Google Colab)
+
+**[Open Phase 2 notebook in Google Colab](https://colab.research.google.com/github/mosesrathan19/ecommerce-data-engineering-pipeline/blob/main/notebooks/02_pyspark_parquet_colab.ipynb)**
+
+1. Open the link and select **Runtime → Run all** (or run one cell at a time to learn).
+2. The notebook installs PySpark, clones this GitHub repository, and starts a local SparkSession.
+3. Inspect Bronze, Silver, quarantine, Gold Parquet, Spark SQL results, and revenue charts.
+4. Phase 2 uses the same source dataset and checks the same **100,100 → 100,000 → 99,375 accepted + 625 quarantined** counts.
+
+Run Phase 2 locally with PySpark installed: 
+
+```bash
+pip install 'pyspark>=3.5,<4'
+python -m src.spark_pipeline --raw-dir data/raw --output-dir outputs/spark
+```
+
+Output folders (excluded from Git) include `outputs/spark/silver/orders/`, `outputs/spark/quarantine/orders/`, `outputs/spark/gold/` and a JSON quality report. Spark writes Parquet as **directories of part-files**, not single CSV-like files. This is a full-refresh demonstration on Colab's local Spark, not a multi-node production deployment.
 
 ## Quick start in Colab
 1. Open [the notebook in Colab](https://colab.research.google.com/github/mosesrathan19/ecommerce-data-engineering-pipeline/blob/main/notebooks/01_ecommerce_etl_colab.ipynb).
@@ -61,7 +83,7 @@ ORDER BY revenue DESC;
 - Published analytics-ready aggregates to SQLite for SQL reporting.
 
 ## Limitations and next steps
-This educational pipeline uses Pandas and SQLite, not distributed Spark; Colab is not a 24/7 scheduler. Future enhancements: PySpark/Parquet, Airflow, incremental loads/upserts, CI with GitHub Actions, cloud object storage.
+Phase 1 uses Pandas and SQLite; Phase 2 adds PySpark and Parquet using a local Spark runtime in Colab. Colab is not a 24/7 scheduler. Future enhancements: Airflow, incremental loads/upserts, CI with GitHub Actions, cloud object storage.
 
 ## License
 MIT. Synthetic data generated for demonstration.
