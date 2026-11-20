@@ -9,7 +9,13 @@ LOG = logging.getLogger("ecommerce_etl")
 EXPECTED = {"completed", "returned", "cancelled"}
 
 def extract(raw_dir: Path):
-    orders = pd.read_csv(raw_dir / "orders.csv", dtype={"order_id": "string", "customer_id": "string", "product_id": "string"})
+    order_files = sorted(raw_dir.glob("orders_part_*.csv"))
+    if not order_files:
+        order_files = [raw_dir / "orders.csv"]
+    orders = pd.concat(
+        [pd.read_csv(p, dtype={"order_id": "string", "customer_id": "string", "product_id": "string"}) for p in order_files],
+        ignore_index=True,
+    )
     customers = pd.read_csv(raw_dir / "customers.csv", dtype={"customer_id": "string"})
     products = pd.read_csv(raw_dir / "products.csv", dtype={"product_id": "string"})
     return orders, customers, products
