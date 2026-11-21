@@ -9,9 +9,27 @@ A portfolio-ready, reproducible **100K-order** batch ETL project designed to run
 
 **Phase 1 (original):** `Raw CSV → Pandas Silver → SQLite Gold`  
 **Phase 2:** `Raw CSV (Bronze) → PySpark validate/enrich → Silver Parquet + quarantine Parquet → Gold Parquet → Spark SQL`  
-**Phase 3:** `Silver snapshot + simulated CDC events → last-event-wins → validate I/U → keyed upsert/delete → immutable Parquet snapshot → Gold reporting`
+**Phase 3:** `Silver snapshot + simulated CDC events → last-event-wins → validate I/U → keyed upsert/delete → immutable Parquet snapshot → Gold reporting`  
+**Phase 4:** `Airflow 3 DAG → PySpark full load → CDC demo → reconciliation + monitoring`  
+**Phase 5:** `AWS S3 / Unity Catalog Volume → Databricks Delta Bronze/Silver → CDC MERGE → Gold reporting`
 
 `CSV sources (Bronze) → Python/Pandas validation and enrichment (Silver) → SQLite + monthly/category/state aggregates (Gold) → SQL & visualization`
+
+## All 5 phases at a glance
+
+| Phase | What it teaches | Start here |
+|---|---|---|
+| **1 — ETL** | Pandas, SQL, quality checks, SQLite | [Phase 1 Colab](notebooks/01_ecommerce_etl_colab.ipynb) |
+| **2 — Spark** | PySpark, Parquet, Bronze/Silver/Gold | [Phase 2 Colab](notebooks/02_pyspark_parquet_colab.ipynb) |
+| **3 — Incremental** | CDC simulation, upsert/delete, idempotent replay | [Phase 3 Colab](notebooks/03_incremental_cdc_colab.ipynb) |
+| **4 — Airflow** | Task dependencies, retries, logs, DAG triggers | [Docker setup](docs/PHASE4_AIRFLOW.md) |
+| **5 — Cloud** | S3 source, Databricks, Unity Catalog, Delta MERGE | [Databricks setup](cloud/databricks/README.md) |
+
+**Use Phases 1–3 in Colab.** Phase 4 uses local Docker, because Colab is not a persistent Airflow server. Phase 5 needs a Databricks workspace; optional S3 storage needs an AWS account with configured access and may incur charges.
+
+**Direct launches:** [Phase 1 Colab](https://colab.research.google.com/github/mosesrathan19/ecommerce-data-engineering-pipeline/blob/main/notebooks/01_ecommerce_etl_colab.ipynb) · [Phase 2 Colab](https://colab.research.google.com/github/mosesrathan19/ecommerce-data-engineering-pipeline/blob/main/notebooks/02_pyspark_parquet_colab.ipynb) · [Phase 3 Colab](https://colab.research.google.com/github/mosesrathan19/ecommerce-data-engineering-pipeline/blob/main/notebooks/03_incremental_cdc_colab.ipynb).
+
+See the [full roadmap](docs/ROADMAP.md) for environment requirements and limitations.
 
 ## Dataset
 - `data/raw/orders_part_01.csv` through `orders_part_20.csv`: **100,100 rows** across 20 CSV shards, including 100 duplicate order IDs; 100,000 distinct orders
@@ -114,7 +132,7 @@ ORDER BY revenue DESC;
 - Published analytics-ready aggregates to SQLite for SQL reporting.
 
 ## Limitations and next steps
-Phase 1 uses Pandas and SQLite; Phase 2 adds PySpark and Parquet using a local Spark runtime in Colab. Colab is not a 24/7 scheduler. Phase 3 adds simulated CDC and Parquet snapshot upserts. Future enhancements: transactional MERGE and durable checkpoints, Airflow, CI with GitHub Actions, and cloud object storage.
+Phase 1 uses Pandas and SQLite; Phase 2 adds PySpark and Parquet using a local Spark runtime in Colab. Colab is not a 24/7 scheduler. Phase 3 adds simulated CDC and Parquet snapshot upserts. Phase 4 adds a local Airflow orchestration example. Phase 5 adds an AWS S3/Databricks Delta Lake deployment path. Future enhancements: durable source checkpoints, transactional production CDC with sequence handling across batches, observability, and cloud infrastructure automation.
 
 ## License
 MIT. Synthetic data generated for demonstration.
