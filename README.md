@@ -8,7 +8,8 @@ A portfolio-ready, reproducible **100K-order** batch ETL project designed to run
 ## Architecture
 
 **Phase 1 (original):** `Raw CSV → Pandas Silver → SQLite Gold`  
-**Phase 2 (new):** `Raw CSV (Bronze) → PySpark validate/enrich → Silver Parquet + quarantine Parquet → Gold Parquet → Spark SQL`
+**Phase 2:** `Raw CSV (Bronze) → PySpark validate/enrich → Silver Parquet + quarantine Parquet → Gold Parquet → Spark SQL`  
+**Phase 3:** `Silver snapshot + simulated CDC events → last-event-wins → validate I/U → keyed upsert/delete → immutable Parquet snapshot → Gold reporting`
 
 `CSV sources (Bronze) → Python/Pandas validation and enrichment (Silver) → SQLite + monthly/category/state aggregates (Gold) → SQL & visualization`
 
@@ -27,6 +28,36 @@ A portfolio-ready, reproducible **100K-order** batch ETL project designed to run
 - Repeatable batch pipeline, idempotent **full-refresh** loads (replace mode)
 - Silver fact table and Gold monthly, category, and state aggregates
 - SQL analytics in SQLite, matplotlib reporting, unit tests
+
+## Phase 3 — Incremental CDC, Upserts, Deletes and Idempotency
+
+**[Open Phase 3 in Google Colab](https://colab.research.google.com/github/mosesrathan19/ecommerce-data-engineering-pipeline/blob/main/notebooks/03_incremental_cdc_colab.ipynb)**
+
+This step introduces simulated Change Data Capture (CDC) concepts. The job keeps the existing Phase 2 Silver dataset as a baseline, applies *only* incoming changed order IDs, and writes an updated Parquet snapshot to a **new version directory**. It does not overwrite the read-side Parquet files.
+
+**One demo batch**:
+| Measure | Rows |
+|---|---:|
+| Starting Silver snapshot | 99,375 |
+| Raw CDC events | 560 |
+| Insert events | 500 |
+| Update events | 40 |
+| Delete events | 10 |
+| Stale duplicate update events | 10 |
+| Effective latest events (after deduplication) | 550 |
+| Final current-state snapshot | 99,865 |
+
+We use event timestamps to pick the newest event per order in this batch; same-key/same-timestamp ambiguity is rejected. For idempotency, the notebook applies the same batch twice to a Spark DataFrame and asserts full row equality with `exceptAll`. A completed-batch manifest allows the `run_demo` entry point to return the saved output without reprocessing the same batch ID.
+
+Run cells from top to bottom in **[notebooks/03_incremental_cdc_colab.ipynb](notebooks/03_incremental_cdc_colab.ipynb)**. Run the integration tests with `pytest -q tests/test_incremental_pipeline.py` after installing PySpark.
+
+**Output paths:**
+- `outputs/incremental/baseline/orders/` — original Silver snapshot
+- `outputs/incremental/snapshots/2026-11-20-demo/orders/` — merged Silver snapshot
+- `outputs/incremental/snapshots/2026-11-20-demo/gold/` — Gold aggregates
+- `outputs/incremental/snapshots/2026-11-20-demo/manifest.json` — batch completion report
+
+**Scope and limitations:** Events are simulated, not captured from a database log. This demo writes whole new Parquet snapshots, not row-level transactional MERGE operations. Gold aggregates are recalculated. It does not maintain persisted per-key versions across *different* batches or support concurrency-safe commits, recovery from partial writes, or real streaming offsets. Use transactional table formats (Delta Lake / Iceberg), checkpoints, and durable object storage for production systems. Colab output is temporary.
 
 ## Phase 2 — PySpark + Parquet (Google Colab)
 
@@ -83,7 +114,7 @@ ORDER BY revenue DESC;
 - Published analytics-ready aggregates to SQLite for SQL reporting.
 
 ## Limitations and next steps
-Phase 1 uses Pandas and SQLite; Phase 2 adds PySpark and Parquet using a local Spark runtime in Colab. Colab is not a 24/7 scheduler. Future enhancements: Airflow, incremental loads/upserts, CI with GitHub Actions, cloud object storage.
+Phase 1 uses Pandas and SQLite; Phase 2 adds PySpark and Parquet using a local Spark runtime in Colab. Colab is not a 24/7 scheduler. Phase 3 adds simulated CDC and Parquet snapshot upserts. Future enhancements: transactional MERGE and durable checkpoints, Airflow, CI with GitHub Actions, and cloud object storage.
 
 ## License
 MIT. Synthetic data generated for demonstration.
