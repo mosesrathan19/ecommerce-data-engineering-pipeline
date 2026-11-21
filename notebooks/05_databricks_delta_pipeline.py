@@ -113,8 +113,8 @@ current = spark.table(SILVER)
 columns = current.columns
 # Reuse 500 stable existing orders as templates for brand-new synthetic IDs.
 templates = current.filter(
-    (F.col("order_id") >= F.lit("O0000501")) &
-    (F.col("order_id") <= F.lit("O0001000"))
+    (F.col("order_id") >= F.lit("O0001001")) &
+    (F.col("order_id") <= F.lit("O0001500"))
 )
 inserts = (templates.withColumn("order_id",
                 F.format_string("O%07d", F.substring("order_id",2,7).cast("int")+100000))
@@ -125,8 +125,8 @@ inserts = (templates.withColumn("order_id",
            .withColumn("op",F.lit("I"))
            .withColumn("event_ts",F.lit("2026-11-20T12:00:00")))
 updates = (current.filter(
-    (F.col("order_id") >= F.lit("O0000001")) &
-    (F.col("order_id") <= F.lit("O0000040")))
+    (F.col("order_id") >= F.lit("O0000626")) &
+    (F.col("order_id") <= F.lit("O0000665")))
     .withColumn("quantity",F.lit(7))
     .withColumn("gross_amount",F.round(F.col("unit_price")*F.col("quantity"),2))
     .withColumn("net_amount",F.round(F.col("gross_amount")*(1-F.col("discount_pct")),2))
@@ -136,8 +136,8 @@ updates = (current.filter(
     .withColumn("op",F.lit("U"))
     .withColumn("event_ts",F.lit("2026-11-20T12:00:00")))
 deletes = (current.filter(
-    (F.col("order_id") >= F.lit("O0000041")) &
-    (F.col("order_id") <= F.lit("O0000050")))
+    (F.col("order_id") >= F.lit("O0000666")) &
+    (F.col("order_id") <= F.lit("O0000675")))
     .withColumn("op",F.lit("D"))
     .withColumn("event_ts",F.lit("2026-11-20T12:00:00")))
 # Stale updates are intentionally lower-priority events.
