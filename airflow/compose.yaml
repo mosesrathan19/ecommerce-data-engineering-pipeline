@@ -1,0 +1,22 @@
+# DEVELOPMENT ONLY. Use a persistent external database and secret backend in production.
+services:
+  airflow:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: airflow standalone
+    ports:
+      - "8080:8080"
+    environment:
+      AIRFLOW_HOME: /opt/airflow
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      PYTHONPATH: /opt/project
+      JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+    volumes:
+      - ../:/opt/project
+      - airflow-state:/opt/airflow
+    working_dir: /opt/project
+    restart: unless-stopped
+
+volumes:
+  airflow-state:
