@@ -135,9 +135,13 @@ updates = (current.filter(
                  .otherwise(F.lit(0).cast("decimal(18,2)")))
     .withColumn("op",F.lit("U"))
     .withColumn("event_ts",F.lit("2026-11-20T12:00:00")))
+# Build stable delete tombstones from unaffected templates, so replay still
+# emits all 10 D events even after the target rows have been removed.
 deletes = (current.filter(
-    (F.col("order_id") >= F.lit("O0000666")) &
-    (F.col("order_id") <= F.lit("O0000675")))
+    (F.col("order_id") >= F.lit("O0000676")) &
+    (F.col("order_id") <= F.lit("O0000685")))
+    .withColumn("order_id",
+                F.format_string("O%07d", F.substring("order_id",2,7).cast("int")-10))
     .withColumn("op",F.lit("D"))
     .withColumn("event_ts",F.lit("2026-11-20T12:00:00")))
 # Stale updates are intentionally lower-priority events.
