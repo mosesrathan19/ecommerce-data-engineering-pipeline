@@ -1,0 +1,37 @@
+name: E-commerce pipeline checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  phase1-and-static-checks:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install phase 1 dependencies
+        run: pip install -r requirements.txt
+      - name: Validate Python modules
+        run: python -m compileall -q src tests
+      - name: Validate Colab notebook JSON
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for path in sorted(Path("notebooks").glob("*.ipynb")):
+              data = json.loads(path.read_text())
+              assert data["nbformat"] == 4
+              assert data["cells"]
+              print("Validated", path)
+          PY
+      - name: Run Phase 1 tests
+        run: python -m pytest -q tests/test_pipeline.py
+
+  # Spark integration tests for Phases 2 and 3 run in Colab or a machine with
+  # adequate Java/Spark memory. Do not imply that static CI runs those jobs.
